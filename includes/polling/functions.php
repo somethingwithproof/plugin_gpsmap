@@ -95,10 +95,19 @@ function gpsmap_write_file(string $filename, string $contents): bool {
 		return $fail();
 	}
 
+	/* PHP's rename() replaces an existing destination on every platform it
+	 * supports, including Windows, where it goes through MoveFileEx with
+	 * MOVEFILE_REPLACE_EXISTING.  The retry is cheap insurance for a
+	 * filesystem that refuses to replace, and is preferable to leaving a stale
+	 * artefact in place. */
 	if (!@rename($temp, $filename)) {
-		@unlink($temp);
+		@unlink($filename);
 
-		return $fail();
+		if (!@rename($temp, $filename)) {
+			@unlink($temp);
+
+			return $fail();
+		}
 	}
 
 	return true;

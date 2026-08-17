@@ -261,6 +261,15 @@ region('10.4.4.');
 $deepest = file_get_contents($root . '/plugins/gpsmap/XML/10.4.4-top.html');
 assert_equal('region: one link per address at the deepest level', 1, substr_count($deepest, 'graph_view.php'));
 
+/* Overwriting an existing artefact is the normal case: the poller rewrites the
+ * same names every cycle. */
+$overwrite = gpsmap_xml_path('overwrite-probe', 'xml');
+assert_true('write: first write creates the file', gpsmap_write_file($overwrite, 'first'));
+assert_true('write: second write replaces it', gpsmap_write_file($overwrite, 'second'));
+assert_equal('write: contents are the newer document', 'second', file_get_contents($overwrite));
+assert_equal('write: no temp files survive', array(),
+	preg_grep('/overwrite-probe\..*\.tmp$/', scandir(dirname($overwrite))));
+
 /* Disk pressure must not publish a truncated document while reporting success. */
 $GLOBALS['gpsmap_stub_log'] = array();
 assert_false('write: a short write fails', gpsmap_write_file('gpsmapshort://target', str_repeat('x', 64)));
